@@ -1,0 +1,547 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+
+void main() {
+  runApp(const YallaMasrApp());
+}
+
+class YallaMasrApp extends StatefulWidget {
+  const YallaMasrApp({super.key});
+
+  @override
+  State<YallaMasrApp> createState() => _YallaMasrAppState();
+}
+
+class _YallaMasrAppState extends State<YallaMasrApp> {
+  ThemeMode _themeMode = ThemeMode.light;
+
+  void toggleTheme() {
+    setState(() {
+      _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Yalla Masr',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        brightness: Brightness.light,
+        primaryColor: const Color(0xFF1A365D),
+        scaffoldBackgroundColor: Colors.grey[50],
+        cardColor: Colors.white,
+        colorScheme: const ColorScheme.light(
+          primary: Color(0xFF1A365D),
+          secondary: Color(0xFFD69E2E),
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF1A365D),
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primaryColor: const Color(0xFF1A365D),
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        cardColor: const Color(0xFF1E1E1E),
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFF1A365D),
+          secondary: Color(0xFFD69E2E),
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF1A365D),
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+      ),
+      themeMode: _themeMode,
+      home: MainDashboard(toggleTheme: toggleTheme),
+    );
+  }
+}
+
+class MainDashboard extends StatefulWidget {
+  final VoidCallback toggleTheme;
+  const MainDashboard({super.key, required this.toggleTheme});
+
+  @override
+  State<MainDashboard> createState() => _MainDashboardState();
+}
+
+class _MainDashboardState extends State<MainDashboard> {
+  int _currentIndex = 0;
+  late List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      DiscoverScreen(toggleTheme: widget.toggleTheme),
+      const MapScreen(),
+      const EscrowBookingScreen(),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.explore_outlined), 
+            selectedIcon: Icon(Icons.explore), 
+            label: 'Discover'
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.map_outlined), 
+            selectedIcon: Icon(Icons.map), 
+            label: 'Map View'
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.shield_outlined), 
+            selectedIcon: Icon(Icons.shield), 
+            label: 'Escrow'
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class DiscoverScreen extends StatelessWidget {
+  final VoidCallback toggleTheme;
+  const DiscoverScreen({super.key, required this.toggleTheme});
+
+  void _showVendorModal(BuildContext context, String name, String price, bool isLive) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          left: 24.0, 
+          right: 24.0, 
+          top: 24.0,
+          bottom: MediaQuery.of(context).padding.bottom + 24.0
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    name, 
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)
+                  ),
+                ),
+                if (isLive)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.green.withOpacity(0.5)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.circle, color: Colors.green, size: 10),
+                        SizedBox(width: 6),
+                        Text(
+                          "Available Now", 
+                          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Icon(Icons.verified, color: Color(0xFFD69E2E), size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  "Yalla Masr Scam-Free Guarantee", 
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.secondary, 
+                    fontWeight: FontWeight.w700
+                  )
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Text(
+              "Fixed Price: $price", 
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 0,
+                ),
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  "Book with Escrow Protection", 
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Row(
+          children: [
+            Icon(Icons.location_on, size: 18),
+            SizedBox(width: 8),
+            Text('Khan el-Khalili, Cairo', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Theme.of(context).brightness == Brightness.dark ? Icons.light_mode : Icons.dark_mode),
+            onPressed: toggleTheme,
+          ),
+          IconButton(
+            icon: const Icon(Icons.notifications_none), 
+            onPressed: () {}
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          const Text(
+            "What do you need?", 
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)
+          ),
+          const SizedBox(height: 24),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildCategoryPill(context, '🏺 Bazaars', true),
+                _buildCategoryPill(context, '🚶‍♂️ Guides', false),
+                _buildCategoryPill(context, '🐪 Rides', false),
+                _buildCategoryPill(context, '🍽️ Dining', false),
+              ],
+            ),
+          ),
+          const SizedBox(height: 32),
+          const Text(
+            "Highly Rated Near You", 
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)
+          ),
+          const SizedBox(height: 16),
+          _buildVendorCard(
+            context, 
+            'Al-Azhar Artisan Crafts', 
+            'Hand-carved Brass Lantern', 
+            '\$25 / 1,200 EGP', 
+            '4.9', 
+            true
+          ),
+          _buildVendorCard(
+            context, 
+            'Tarek - Certified Guide', 
+            'Old Cairo & Moez St. Tour', 
+            '\$35 / 1,700 EGP', 
+            '5.0', 
+            true
+          ),
+          _buildVendorCard(
+            context, 
+            'Giza Sunset Camel Trek', 
+            '1-Hour Desert Ride', 
+            '\$20 / 980 EGP', 
+            '4.8', 
+            false
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryPill(BuildContext context, String title, bool isSelected) {
+    return Container(
+      margin: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isSelected ? Theme.of(context).primaryColor : Colors.grey.withOpacity(0.3)
+        ),
+      ),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVendorCard(BuildContext context, String name, String service, String price, String rating, bool isLive) {
+    return GestureDetector(
+      onTap: () => _showVendorModal(context, name, price, isLive),
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 0,
+        color: Theme.of(context).cardColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.grey.withOpacity(0.2)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      name, 
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      const Icon(Icons.star, color: Color(0xFFD69E2E), size: 18),
+                      const SizedBox(width: 4),
+                      Text(rating, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  )
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                service, 
+                style: const TextStyle(color: Colors.grey, fontSize: 14)
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    price, 
+                    style: TextStyle(
+                      fontSize: 16, 
+                      fontWeight: FontWeight.w800, 
+                      color: Theme.of(context).brightness == Brightness.light 
+                          ? Theme.of(context).primaryColor 
+                          : Colors.white
+                    )
+                  ),
+                  const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                ],
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class MapScreen extends StatefulWidget {
+  const MapScreen({super.key});
+
+  @override
+  State<MapScreen> createState() => _MapScreenState();
+}
+
+class _MapScreenState extends State<MapScreen> {
+  final Completer<GoogleMapController> _controller = Completer();
+  
+  static const CameraPosition _kCairo = CameraPosition(
+    target: LatLng(30.0478, 31.2625),
+    zoom: 16.0,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          GoogleMap(
+            mapType: MapType.normal,
+            initialCameraPosition: _kCairo,
+            myLocationEnabled: true,
+            zoomControlsEnabled: false,
+            onMapCreated: (GoogleMapController controller) {
+              _controller.complete(controller);
+            },
+            markers: {
+              Marker(
+                markerId: const MarkerId('vendor_1'),
+                position: const LatLng(30.0478, 31.2625),
+                infoWindow: const InfoWindow(
+                  title: 'Al-Azhar Artisan Crafts', 
+                  snippet: 'Verified Yalla Masr Partner'
+                ),
+                icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+              ),
+              const Marker(
+                markerId: MarkerId('guide_1'),
+                position: LatLng(30.0490, 31.2610),
+                infoWindow: InfoWindow(
+                  title: 'Tarek - Certified Guide', 
+                  snippet: 'Available Now'
+                ),
+              ),
+            },
+          ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 16,
+            left: 16,
+            right: 16,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1), 
+                    blurRadius: 10,
+                    offset: const Offset(0, 4)
+                  )
+                ],
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.search, color: Colors.grey),
+                  SizedBox(width: 12),
+                  Text(
+                    "Search verified vendors near you...", 
+                    style: TextStyle(color: Colors.grey, fontSize: 16)
+                  ),
+                ],
+              ),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+}
+
+class EscrowBookingScreen extends StatelessWidget {
+  const EscrowBookingScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Active Booking', style: TextStyle(fontWeight: FontWeight.w600)),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 20,
+                    )
+                  ]
+                ),
+                child: const Icon(Icons.qr_code_2, size: 200, color: Colors.black),
+              ),
+              const SizedBox(height: 32),
+              const Text(
+                "Escrow Locked",
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Show this QR code to the vendor only when you are completely satisfied with the service. Scanning it will release the funds.",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16, color: Colors.grey, height: 1.5),
+              ),
+              const Spacer(),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.flag, color: Colors.red),
+                      label: const Text("Report Issue", style: TextStyle(color: Colors.red)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: const BorderSide(color: Colors.red),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {},
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.chat),
+                      label: const Text("Chat"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      onPressed: () {},
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
